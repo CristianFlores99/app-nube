@@ -34,12 +34,12 @@ async function cargarUsuarios() {
     const tr = document.createElement('tr');
     tr.dataset.id = u.id; // importante para editar/eliminar
     tr.innerHTML = `
-      <td>${u.id}</td>
-      <td>${u.dni}</td>
-      <td>${u.name}</td>
-      <td>${u.estado}</td>
-      <td>${u.area}</td>
-      <td>${u.created_at}</td>
+      <td>${user.id ?? ''}</td>
+      <td>${user.codigo_operario ?? ''}</td>
+      <td>${user.DNI ?? ''}</td>
+      <td>${user.nombre ?? ''}</td>
+      <td>${user.area ?? ''}</td>
+      <td>${user.creado_en ? new Date(user.creado_en).toLocaleString() : ''}</td>
       <td>
         <button class="btn-edit">Editar</button>
         <button class="btn-delete">Eliminar</button>
