@@ -24,6 +24,10 @@
     .mp-list { margin-left:20px; margin-bottom:10px; }
     .mp-list div { margin-bottom:3px; }
 
+    table { border-collapse: collapse; margin-top: 10px; }
+    table th, table td { border: 1px solid #ccc; padding: 5px; text-align: left; }
+    select { padding: 3px; }
+
     /* Responsivo */
     @media (max-width: 600px) {
       .dashboard { display: block; }
@@ -40,6 +44,7 @@
       <h2>Supervisor</h2>
       <ul>
         <li><button onclick="mostrarSeccion('ordenProduccion')">Creación de Orden de Producción</button></li>
+        <li><button onclick="mostrarSeccion('seguimientoOP'); cargarOP()">Seguimiento OP</button></li>
       </ul>
       <button class="btn-logout" onclick="window.location.href='index.html'">Cerrar sesión</button>
     </aside>
@@ -87,6 +92,25 @@
         </form>
       </div>
 
+      <!-- SECCIÓN SEGUIMIENTO DE OP -->
+      <div id="seguimientoOP" class="seccion" style="display:none;">
+        <h2>Seguimiento de Órdenes de Producción</h2>
+        <table width="100%">
+          <thead>
+            <tr>
+              <th>OP</th>
+              <th>Fecha</th>
+              <th>Motivo</th>
+              <th>Productos</th>
+              <th>Reserva</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaOP"></tbody>
+        </table>
+      </div>
+
     </main>
   </div>
 
@@ -94,8 +118,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
     const supabaseUrl = "https://ldgrlfnmuvvaqsezjsvj.supabase.co";
-    const supabaseKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZ3JsZm5tdXZ2YXFzZXpqc3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MzEwNDMsImV4cCI6MjA3NDUwNzA0M30.NrUTqCLkzMWUGqn2XIAsCY8H90vgHpuxhMT2zIVt3Zo";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZ3JsZm5tdXZ2YXFzZXpqc3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MzEwNDMsImV4cCI6MjA3NDUwNzA0M30.NrUTqCLkzMWUGqn2XIAsCY8H90vgHpuxhMT2zIVt3Zo";
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -190,6 +213,77 @@
       document.getElementById('productosContainer').innerHTML = '';
       agregarProducto();
       document.getElementById('ordenProduccion').style.display = 'none';
+    }
+
+    // =======================
+    // CREAR OP
+    // =======================
+    document.getElementById('opForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const opNumero = document.getElementById('opNumero').value;
+      const fechaCreacion = document.getElementById('fechaCreacion').value;
+      const motivo = document.getElementById('motivo').value;
+      const reserva = document.getElementById('reserva').value;
+
+      const productos = Array.from(document.querySelectorAll('.producto-item')).map(p => ({
+        nombre: p.querySelector('select[name="productoNombre[]"]').value,
+        cantidad: p.querySelector('input[name="productoCantidad[]"]').value,
+        unidad: p.querySelector('select[name="productoUnidad[]"]').value
+      }));
+
+      const { data, error } = await supabaseClient
+        .from('ordenes_produccion')
+        .insert([{ opNumero, fechaCreacion, motivo, productos, reserva, estado: 'Pendiente' }]);
+
+      if(error){
+        alert('Error al crear OP: ' + error.message);
+        return;
+      }
+      alert('OP creada con éxito');
+      cancelarOP();
+    });
+
+    // =======================
+    // SEGUIMIENTO OP
+    // =======================
+    async function cargarOP() {
+      const { data: ops, error } = await supabaseClient
+        .from('ordenes_produccion')
+        .select('*')
+        .order('fechaCreacion', { ascending: false });
+
+      const tabla = document.getElementById('tablaOP');
+      tabla.innerHTML = '';
+
+      ops.forEach(op => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${op.opNumero}</td>
+          <td>${op.fechaCreacion}</td>
+          <td>${op.motivo}</td>
+          <td>${op.productos.map(p => `${p.nombre} (${p.cantidad} ${p.unidad})`).join('<br>')}</td>
+          <td>${op.reserva}</td>
+          <td>
+            <select onchange="actualizarEstado('${op.id}', this.value)">
+              <option value="Pendiente" ${op.estado==='Pendiente'?'selected':''}>Pendiente</option>
+              <option value="En proceso" ${op.estado==='En proceso'?'selected':''}>En proceso</option>
+              <option value="Finalizada" ${op.estado==='Finalizada'?'selected':''}>Finalizada</option>
+            </select>
+          </td>
+          <td><button onclick="eliminarOP('${op.id}')">❌</button></td>
+        `;
+        tabla.appendChild(tr);
+      });
+    }
+
+    async function actualizarEstado(id, estado) {
+      await supabaseClient.from('ordenes_produccion').update({ estado }).eq('id', id);
+    }
+
+    async function eliminarOP(id) {
+      if(!confirm('¿Eliminar esta OP?')) return;
+      await supabaseClient.from('ordenes_produccion').delete().eq('id', id);
+      cargarOP();
     }
   </script>
 </body>
