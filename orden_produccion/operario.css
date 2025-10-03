@@ -1,0 +1,13 @@
+body { margin:0; font-family:Arial,sans-serif; display:flex; height:100vh; background:#f4f6f9;}
+.sidebar { width:220px; background:#065f46; color:white; padding:20px; display:flex; flex-direction:column;}
+.sidebar h2 { text-align:center; margin-bottom:20px; }
+.sidebar button { margin:5px 0; padding:10px; border:none; border-radius:6px; background:#10b981; color:white; cursor:pointer;}
+.sidebar button:hover { background:#059669; }
+.main { flex:1; padding:20px; overflow-y:auto; }
+.seccion { display:none; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+.seccion.activa { display:block; }
+table { width:100%; border-collapse:collapse; margin-bottom:20px;}
+table th, table td { border:1px solid #ddd; padding:8px; text-align:center; }
+table th { background:#f1f5f9; }
+button.ejecutar { background:#10b981; color:white; border:none; border-radius:5px; padding:5px 8px; cursor:pointer;}
+button.ejecutar:hover { background:#059669; }

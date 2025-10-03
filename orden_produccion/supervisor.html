@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Supervisor</title>
+<link rel="stylesheet" href="supervisor.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Supervisor</h2>
+    <button onclick="mostrarSeccion('crearOP')">📝 Crear OP</button>
+    <button onclick="mostrarSeccion('seguimientoOP')">📋 Seguimiento OP</button>
+  </div>
+
+  <div class="main">
+    <!-- Crear OP -->
+    <section id="crearOP" class="seccion activa">
+      <h2>Crear Orden de Producción</h2>
+      <form id="formOP">
+        <label>Producto:</label>
+        <input type="text" id="producto" required>
+        <label>Cantidad:</label>
+        <input type="number" id="cantidad" min="1" required>
+        <label>Materia Prima:</label>
+        <input type="text" id="materiaPrima" required>
+        <button type="submit">Crear OP</button>
+      </form>
+    </section>
+
+    <!-- Seguimiento OP -->
+    <section id="seguimientoOP" class="seccion">
+      <h2>Seguimiento de OP</h2>
+      <table id="tablaOP">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Materia Prima</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+<script src="supervisor.js"></script>
+</body>
+</html>

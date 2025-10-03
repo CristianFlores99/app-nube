@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Operario</title>
+<link rel="stylesheet" href="operario.css">
+</head>
+<body>
+<div class="sidebar">
+<h2>Operario</h2>
+<button onclick="mostrarSeccion('ejecutarOP')">🚀 Ejecutar OP</button>
+</div>
+
+<div class="main">
+<section id="ejecutarOP" class="seccion activa">
+<h2>Órdenes de Producción Aprobadas</h2>
+<table id="tablaOP">
+<thead>
+<tr>
+<th>ID</th>
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Materia Prima</th>
+<th>Estado</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</section>
+</div>
+
+<script src="operario.js"></script>
+</body>
+</html>
