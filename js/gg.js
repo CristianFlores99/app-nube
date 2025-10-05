@@ -183,3 +183,130 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarTablaPedidos();
     mostrarSeccion('pedidoMP');
 });
+
+//--------------------------------------------------------------------
+
+
+// Cargar todas las OP en la tabla
+async function cargarOP() {
+    const tabla = document.getElementById('tablaOP');
+    tabla.innerHTML = ''; // limpiar tabla
+
+    const { data, error } = await supabaseClient
+        .from('orden_produccion')
+        .select('*')
+        .order('fecha_emision', { ascending: false });
+
+    if (error) {
+        console.error("Error al cargar OP:", error);
+        tabla.innerHTML = `<tr><td colspan="5">Error al cargar órdenes</td></tr>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        tabla.innerHTML = `<tr><td colspan="5">No hay órdenes registradas</td></tr>`;
+        return;
+    }
+
+    data.forEach(op => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${op.numero_op}</td>
+            <td><button onclick='verOrden("${op.numero_op}")' class="btn-editar">📄 Ver Orden</button></td>
+            <td>${op.estado}${op.motivo ? ` (${op.motivo})` : ''}</td>
+            <td>${new Date(op.fecha_emision).toLocaleString()}</td>
+            <td>
+                ${op.estado === 'Pendiente'
+                    ? `<button onclick='aprobarOP("${op.numero_op}")' class="aprobar">Aprobar</button>
+                       <button onclick='rechazarOP("${op.numero_op}")' class="rechazar">Rechazar</button>`
+                    : 'No disponible'}
+            </td>
+        `;
+        tabla.appendChild(tr);
+    });
+}
+
+// Función para ver orden desde la base de datos
+async function verOrden(numero_op) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('orden_produccion')
+            .select('ver_orden, fecha_emision, estado, motivo')
+            .eq('numero_op', numero_op)
+            .single(); // obtenemos solo un registro
+
+        if (error) {
+            console.error("Error al obtener la orden:", error);
+            alert("No se pudo cargar la orden.");
+            return;
+        }
+
+        // ver_orden se espera como JSON array [{nombre, cantidad}, ...]
+        const productos = data.ver_orden || [];
+        const productosHtml = productos.map(p => `<p>${p.nombre} - Cantidad: ${p.cantidad}</p>`).join('');
+
+        document.getElementById('detalleOrden').innerHTML = `
+            <p><strong>Número OP:</strong> ${numero_op}</p>
+            <p><strong>Fecha Emisión:</strong> ${new Date(data.fecha_emision).toLocaleString()}</p>
+            <p><strong>Estado:</strong> ${data.estado}${data.motivo ? ` (${data.motivo})` : ''}</p>
+            <h4>Productos:</h4>
+            ${productosHtml || '<p>No hay productos registrados</p>'}
+        `;
+
+        document.getElementById('modalOrden').style.display = 'flex';
+    } catch (err) {
+        console.error("Error en verOrden:", err);
+    }
+}
+// Cerrar modal
+function cerrarModal() {
+    document.getElementById('modalOrden').style.display = 'none';
+}
+
+// Aprobar OP
+async function aprobarOP(numero_op) {
+    const confirmacion = confirm(`¿Desea aprobar la OP ${numero_op}?`);
+    if (!confirmacion) return;
+
+    const { data, error } = await supabaseClient
+        .from('orden_produccion')
+        .update({ estado: 'Aprobado', motivo: null })
+        .eq('numero_op', numero_op);
+
+    if (error) {
+        console.error("Error al aprobar la OP:", error);
+        alert("No se pudo aprobar la orden.");
+        return;
+    }
+
+    alert(`OP ${numero_op} aprobada correctamente.`);
+    cargarOP();
+}
+
+// Rechazar OP
+async function rechazarOP(numero_op) {
+    const motivo = prompt("Ingrese el motivo del rechazo (ej: Stock insuficiente):");
+    if (!motivo) {
+        alert("Debe ingresar un motivo para rechazar la orden.");
+        return;
+    }
+
+    const { data, error } = await supabaseClient
+        .from('orden_produccion')
+        .update({ estado: 'Rechazado', motivo })
+        .eq('numero_op', numero_op);
+
+    if (error) {
+        console.error("Error al rechazar la OP:", error);
+        alert("No se pudo rechazar la orden.");
+        return;
+    }
+
+    alert(`OP ${numero_op} rechazada correctamente.`);
+    cargarOP();
+}
+
+// Inicializar tabla al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    cargarOP();
+});

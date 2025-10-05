@@ -15,6 +15,8 @@
             <ul>
                 <li><button onclick="mostrarSeccion('pedidoMP')">Crear Pedido</button></li>
                 <li><button onclick="mostrarSeccion('vistaPedidos')">Ver Pedidos</button></li>
+                <li><button onclick="mostrarSeccion('seguimientoOP')">Seguimiento OP</button></li>
+
                 <button class="btn-logout" onclick="cerrarSesion()">Cerrar sesión</button>
             </ul>
         </aside>
@@ -70,16 +72,37 @@
                     </table>
                 </div>
             </div>
+
+            <!-- ===================== SEGUIMIENTO OP ===================== -->
+            <div id="seguimientoOP" class="seccion" style="display:none;">
+                <h2>Seguimiento de Órdenes de Producción</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Numero de OP</th>
+                                <th>Orden</th>
+                                <th>Estado</th>
+                                <th>Fecha Emisión</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaOP"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </main>
     </div>
+    
     <!-- Cargar EmailJS v3 en navegador -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>
-  // Inicializar EmailJS
-  emailjs.init("SJ34lI1ytF8WPEMSi"); // Tu public key
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+      // Inicializar EmailJS
+      emailjs.init("SJ34lI1ytF8WPEMSi"); // Tu public key
+    </script>
 
-<script src="js/gg.js"></script>
+    <script src="js/gg.js"></script>
     <script>
         function cerrarSesion() {
             localStorage.clear();
