@@ -226,38 +226,32 @@ async function cargarOP() {
     });
 }
 
-// Función para ver orden desde la base de datos
+// Función para ver orden
 async function verOrden(numero_op) {
-    try {
-        const { data, error } = await supabaseClient
-            .from('orden_produccion')
-            .select('ver_orden, fecha_emision, estado, motivo')
-            .eq('numero_op', numero_op)
-            .single(); // obtenemos solo un registro
+    const { data, error } = await supabaseClient
+        .from('orden_produccion')
+        .select('ver_orden, fecha_emision, estado, motivo')
+        .eq('numero_op', numero_op)
+        .single();
 
-        if (error) {
-            console.error("Error al obtener la orden:", error);
-            alert("No se pudo cargar la orden.");
-            return;
-        }
-
-        // ver_orden se espera como JSON array [{nombre, cantidad}, ...]
-        const productos = data.ver_orden || [];
-        const productosHtml = productos.map(p => `<p>${p.nombre} - Cantidad: ${p.cantidad}</p>`).join('');
-
-        document.getElementById('detalleOrden').innerHTML = `
-            <p><strong>Número OP:</strong> ${numero_op}</p>
-            <p><strong>Fecha Emisión:</strong> ${new Date(data.fecha_emision).toLocaleString()}</p>
-            <p><strong>Estado:</strong> ${data.estado}${data.motivo ? ` (${data.motivo})` : ''}</p>
-            <h4>Productos:</h4>
-            ${productosHtml || '<p>No hay productos registrados</p>'}
-        `;
-
-        document.getElementById('modalOrden').style.display = 'flex';
-    } catch (err) {
-        console.error("Error en verOrden:", err);
+    if (error) {
+        console.error("Error al obtener la orden:", error);
+        return;
     }
+
+    const productos = data.ver_orden;
+    const productosHtml = productos.map(p => `<p>${p.nombre} - Cantidad: ${p.cantidad}</p>`).join('');
+
+    document.getElementById('detalleOrden').innerHTML = `
+        <p><strong>Número OP:</strong> ${numero_op}</p>
+        <p><strong>Fecha Emisión:</strong> ${new Date(data.fecha_emision).toLocaleString()}</p>
+        <p><strong>Estado:</strong> ${data.estado}${data.motivo ? ` (${data.motivo})` : ''}</p>
+        <h4>Productos:</h4>
+        ${productosHtml}
+    `;
+    document.getElementById('modalOrden').style.display = 'flex';
 }
+
 // Cerrar modal
 function cerrarModal() {
     document.getElementById('modalOrden').style.display = 'none';
