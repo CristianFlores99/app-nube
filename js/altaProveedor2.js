@@ -1,4 +1,9 @@
+// ========================================================
+// ===============  GESTIÓN DE PROVEEDORES  ===============
+// ========================================================
+
 // ===================== FUNCIONES GENERALES =====================
+
 // Mostrar una sección y ocultar las demás
 function mostrarSeccion(seccionId) {
   document.querySelectorAll('.seccion').forEach(sec => sec.style.display = 'none');
@@ -8,7 +13,6 @@ function mostrarSeccion(seccionId) {
     document.getElementById('formProveedor').style.display = 'none';
     document.getElementById('mensajeExitoProveedor').style.display = 'none';
     document.getElementById('tablaProveedorContainer').style.display = 'block';
-
     listarProveedores();
   }
 
@@ -16,7 +20,6 @@ function mostrarSeccion(seccionId) {
     document.getElementById('formOrden').style.display = 'none';
     document.getElementById('mensajeExitoOrden').style.display = 'none';
     document.getElementById('tablaOrdenesContainer').style.display = 'block';
-
     listarOrdenes();
   }
 }
@@ -31,25 +34,28 @@ function volverPanel() {
 
 // Mostrar formulario nuevo PROVEEDOR
 function mostrarFormularioProveedor() {
-  document.getElementById('formProveedor').style.display = 'block';
   document.getElementById('proveedorForm').reset();
+  document.getElementById('mensajeError').style.display = 'none';
+  document.getElementById('formProveedor').style.display = 'block';
   document.getElementById('mensajeExitoProveedor').style.display = 'none';
   document.getElementById('tablaProveedorContainer').style.display = 'none';
 }
 
-
+// Cancelar formulario proveedor
 function cancelarProveedor() {
-
-  document.getElementById('tablaProveedorContainer').style.display = 'block';
+  document.getElementById('proveedorForm').reset();
   document.getElementById('formProveedor').style.display = 'none';
-
-
+  document.getElementById('mensajeError').style.display = 'none';
+  document.getElementById('tablaProveedorContainer').style.display = 'block';
 }
 
-// Listar proveedores en tabla
+// ================== LISTAR PROVEEDORES ==================
 async function listarProveedores() {
   try {
-    const { data, error } = await supabaseClient.from('proveedor').select('*').order('dni_cuil');
+    const { data, error } = await supabaseClient
+      .from('proveedor')
+      .select('*')
+      .order('dni_cuil');
     if (error) throw error;
 
     const tbody = document.querySelector('#tablaProveedor tbody');
@@ -66,10 +72,10 @@ async function listarProveedores() {
         <td>${proveedor.pref_cont}</td>
         <td>${proveedor.direccion}</td>
         <td>${proveedor.estado}</td>
-        <td>${proveedor.alta_id_emp}</td>
+        <td>${proveedor.alta_id_emp || "-"}</td>
         <td>
           <button class="btn-editar" onclick="editarProveedor('${proveedor.dni_cuil}')">Editar</button>
-          <button class="btn-eliminar" onclick="bajaProveedor('${proveedor.dni_cuil}')">Eliminar</button>
+          <button class="btn-eliminar" onclick="bajaProveedor('${proveedor.dni_cuil}')">Dar de baja</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -81,20 +87,18 @@ async function listarProveedores() {
 
 // ================== VALIDACIONES ==================
 
-// Validar email
 function validarEmail(email) {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
 }
 
 function validarTelefono(telefono) {
-  // Solo permite 10 dígitos numéricos (sin guiones ni espacios)
-  const regex = /^[0-9]{10}$/;
+  const regex = /^[0-9]{8,15}$/; // hasta 15 dígitos (permite internacionales)
   return regex.test(telefono);
 }
 
 function validarDNI(dni) {
-  const regex = /^[0-9]{8}$/;
+  const regex = /^[0-9]{7,8}$/;
   return regex.test(dni);
 }
 
@@ -103,20 +107,25 @@ function validarCUIL(cuil) {
   return regex.test(cuil);
 }
 
+function direccionEsValida(direccion) {
+  // validación mínima, se puede mejorar
+  return direccion && direccion.length >= 5;
+}
+
 function mostrarError(mensaje) {
   const div = document.getElementById('mensajeError');
-  if (!div) return alert(mensaje); // fallback si no hay div
+  if (!div) return alert(mensaje); // fallback
   div.innerText = mensaje;
   div.style.display = 'block';
   setTimeout(() => div.style.display = 'none', 4000);
 }
 
+// ================== EVENTOS DINÁMICOS ==================
 
-// ================== CAMBIO DINÁMICO LABEL DOCUMENTO ==================
+// Cambiar dinámicamente el label de documento
 const tipoProveedorSelect = document.getElementById("tipoProveedor");
 const documentoLabel = document.getElementById("labelDocumento");
 const documentoInput = document.getElementById("documento");
-
 
 tipoProveedorSelect.addEventListener("change", () => {
   if (tipoProveedorSelect.value === "monotributista") {
@@ -125,12 +134,18 @@ tipoProveedorSelect.addEventListener("change", () => {
     documentoInput.value = "";
   } else if (tipoProveedorSelect.value === "responsable inscripto") {
     documentoLabel.innerText = "CUIL:";
-    documentoInput.placeholder = "Ej CUIL: 20-12345678-3";
+    documentoInput.placeholder = "Ej: 20-12345678-3";
+    documentoInput.value = "";
   } else {
     documentoLabel.innerText = "Documento:";
     documentoInput.placeholder = "Seleccione tipo primero";
     documentoInput.value = "";
   }
+});
+
+// Restringir campo teléfono solo a números (y 15 máx)
+document.getElementById("telefono").addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 15);
 });
 
 // ================== EVENTO SUBMIT ==================
@@ -152,18 +167,18 @@ document.getElementById("proveedorForm").addEventListener("submit", async functi
   if (!nombre) return mostrarError("El nombre es obligatorio");
   if (!tipo_proveedor) return mostrarError("Debe seleccionar el tipo de proveedor");
 
-  if (tipo_proveedor === "consumidor final" && !validarDNI(dni_cuil)) {
+  if (tipo_proveedor === "monotributista" && !validarDNI(dni_cuil)) {
     return mostrarError("Formato incorrecto de DNI. Ej: 12345678");
   }
 
-  if (tipo_proveedor === "comercial" && !validarCUIL(dni_cuil)) {
+  if (tipo_proveedor === "responsable inscripto" && !validarCUIL(dni_cuil)) {
     return mostrarError("Formato incorrecto de CUIL. Ej: 20-12345678-3");
   }
 
   if (!pref_cont) return mostrarError("Debe seleccionar la preferencia de contacto");
   if (!validarEmail(email)) return mostrarError("El email no tiene un formato válido");
-  if (!validarTelefono(telefono)) return mostrarError("Formato incorrecto de teléfono. Solo números, Ej: 1123456789");
-  if (!direccionEsValida(direccion)) return mostrarError("Debe seleccionar una dirección de la lista de direcciones validadas");
+  if (!validarTelefono(telefono)) return mostrarError("Formato incorrecto de teléfono. Solo números (8 a 15 dígitos)");
+  if (!direccionEsValida(direccion)) return mostrarError("Debe ingresar una dirección válida");
 
   try {
     // ============ VERIFICAR DUPLICADOS ============
@@ -173,12 +188,11 @@ document.getElementById("proveedorForm").addEventListener("submit", async functi
       .eq('dni_cuil', dni_cuil)
       .maybeSingle();
 
-    // Permite que el mismo proveedor mantenga su DNI/CUIL
     if (existente && Number(id_proveedor) !== existente.id_proveedor) {
       throw new Error("Ya existe un proveedor con ese DNI/CUIL");
     }
 
-    // ============ DATOS DEL PROVEEDOR ============
+    // ============ CREAR OBJETO ============
     const nuevoProveedor = {
       nombre,
       tipo_proveedor,
@@ -192,7 +206,6 @@ document.getElementById("proveedorForm").addEventListener("submit", async functi
 
     // ============ CREAR O EDITAR ============
     if (id_proveedor) {
-      // === EDICIÓN ===
       const { error } = await supabaseClient
         .from("proveedor")
         .update(nuevoProveedor)
@@ -209,7 +222,6 @@ document.getElementById("proveedorForm").addEventListener("submit", async functi
 
     document.getElementById("formProveedor").style.display = "none";
     document.getElementById("mensajeExitoProveedor").style.display = "block";
-
     listarProveedores();
 
   } catch (err) {
@@ -218,11 +230,9 @@ document.getElementById("proveedorForm").addEventListener("submit", async functi
   }
 });
 
-
 // ================== EDITAR PROVEEDOR ==================
 async function editarProveedor(dni) {
   try {
-
     const { data, error } = await supabaseClient
       .from('proveedor')
       .select('*')
@@ -230,37 +240,26 @@ async function editarProveedor(dni) {
       .single();
     if (error) throw error;
 
-    // Mapear tipo_cliente de DB al value del select
-    let tipoValue = '';
-    if (data.tipo_proveedor === "responsable inscripto") tipoValue = "responsable inscripto";
-    else if (data.tipo_proveedor === "monotributista") tipoValue = "monotributista";
-
-    tipoProveedorSelect.value = tipoValue;
-
-    if (tipoValue === "monotributista") {
-
-      documentoLabel.innerText = "DNI:";
-      documentoInput.placeholder = "Ingrese DNI (7 u 8 dígitos)";
-    } else if (tipoValue === "responsable inscripto") {
-      documentoLabel.innerText = "CUIL:";
-      documentoInput.placeholder = "Ingrese CUIL (XX-XXXXXXXX-X)";
-    }
-
+    tipoProveedorSelect.value = data.tipo_proveedor;
     documentoInput.value = data.dni_cuil;
 
-    // Resto de campos
+    if (data.tipo_proveedor === "monotributista") {
+      documentoLabel.innerText = "DNI:";
+      documentoInput.placeholder = "Ej: 12345678";
+    } else {
+      documentoLabel.innerText = "CUIL:";
+      documentoInput.placeholder = "Ej: 20-12345678-3";
+    }
+
     document.getElementById('nombre').value = data.nombre;
     document.getElementById('direccion').value = data.direccion;
     document.getElementById('email').value = data.email;
     document.getElementById('telefono').value = data.telefono;
     document.getElementById('preferenciaContacto').value = data.pref_cont;
     document.getElementById('estado').value = data.estado;
-
     document.getElementById('id_proveedor').value = data.id_proveedor;
 
-    // Mostrar formulario
     document.getElementById('formProveedor').style.display = 'block';
-
     document.getElementById('tablaProveedorContainer').style.display = 'none';
   } catch (err) {
     console.error(err);
@@ -272,7 +271,8 @@ async function editarProveedor(dni) {
 async function bajaProveedor(dni) {
   if (!confirm('¿Desea dar de baja este proveedor?')) return;
   try {
-    const { error } = await supabaseClient.from('proveedor')
+    const { error } = await supabaseClient
+      .from('proveedor')
       .update({ estado: 'inactivo' })
       .eq('dni_cuil', dni);
     if (error) throw error;
@@ -282,6 +282,3 @@ async function bajaProveedor(dni) {
     mostrarError('Error al dar de baja el proveedor');
   }
 }
-
-
-
